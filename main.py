@@ -1,54 +1,5 @@
 from flask import Flask, request, render_template
-from markupsafe import escape
-import random
-
-
-def choose_red_and_blue_randomly(first_player, second_player):
-    """
-    This is an helper function - to randomly chose red and blue players
-    :param first_player: first_player address
-    :param second_player: second_player address
-    :return:
-    """
-    players = [first_player, second_player]
-    red_player = random.choice(players)
-    players.remove(red_player)
-    blue_player = players.pop()
-    return red_player, blue_player
-
-
-def create_state(player):
-    return []
-
-
-class Game:
-    def __init__(self, first_player, second_player):
-        red_player, blue_player = choose_red_and_blue_randomly(first_player, second_player)
-        self.red_player = red_player
-        self.blue_player = blue_player
-        self.round_num = 0
-        self.action_num = 0
-        self.blue_state = create_state(blue_player)
-        self.red_state = create_state(red_player)
-
-
-class ConnectionHandler:
-    def __init__(self):
-        self.first_start_request = True
-        self.active_game = None
-
-    def is_first_game_request(self):
-        return self.first_start_request
-
-    def wait_for_second_player(self, first_player):
-        self.first_start_request = False
-        self.active_game = {'first_player': first_player}
-
-    def start_game(self, second_player):
-        self.active_game['second_player'] = second_player
-        self.active_game['game_state'] = Game(self.active_game['second_player'], self.active_game['second_player'])
-        return self.active_game['game_state']
-
+from core.connection_handler import ConnectionHandler
 
 app = Flask(__name__)
 app.connection_handler = ConnectionHandler()
@@ -62,10 +13,31 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/game_state')
+def get_game_state():
+    return app.connection_handler.get_last_result()
+
+
 @app.route('/start_game', methods=['GET'])
 def start_game():
+    """
+    :return: representation of a new game if two player are connected,
+    other message describing the state otherwise.
+    """
     if app.connection_handler.is_first_game_request():
         app.connection_handler.wait_for_second_player(request.remote_addr)
-        return 'Waiting For Second Player'
-    game = app.connection_handler.start_game(request.remote_addr)
-    return {'red_player_state': game.red_state, 'blue_player_state': game.blue_state}
+        result = {'status': 'Waiting For Second Player'}
+
+    elif app.connection_handler.is_same_connection(request.remote_addr):
+        # we don't want to update this as a new state
+        return {'status': 'The same player entered twice'}
+
+    elif app.connection_handler.game_started():
+        result = {'status': 'The game already initialized'}
+
+    else:
+        game = app.connection_handler.start_game(request.remote_addr)
+        result = game.to_response()
+
+    app.connection_handler.update_last_result(result)
+    return result
