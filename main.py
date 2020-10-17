@@ -30,11 +30,10 @@ def start_game():
         app.connection_handler.wait_for_second_player(request.remote_addr)
         return {'status': 'Waiting For Second Player'}
 
-    if app.connection_handler.active_game['first_player'] == request.remote_addr:
+    if app.connection_handler.is_same_connection(request.remote_addr):
         return {'status': 'The same player entered twice'}
 
-    if 'first_player' in app.connection_handler.active_game and \
-            'second_player' in app.connection_handler.active_game:
+    if app.connection_handler.game_started():
         return {'status': 'The game already initialized'}
 
     game = app.connection_handler.start_game(request.remote_addr)

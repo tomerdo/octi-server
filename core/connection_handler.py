@@ -9,8 +9,11 @@ class ConnectionHandler:
         self.first_start_request = True
         self.active_game = None
 
-    def game_start(self):
-        return self.active_game is None or 'second_player' not in self.active_game
+    def game_started(self):
+        """
+        :return: predicate that return true iff the game is initialized
+        """
+        return 'first_player' in self.active_game and 'second_player' in self.active_game
 
     def is_first_game_request(self):
         return self.first_start_request
@@ -26,3 +29,6 @@ class ConnectionHandler:
 
     def game_repr(self):
         return self.active_game['game_state'].to_response()
+
+    def is_same_connection(self, remote_addr):
+        return self.active_game['first_player'] == remote_addr
