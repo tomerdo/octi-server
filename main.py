@@ -31,6 +31,9 @@ class Game:
         self.blue_state = create_state(blue_player)
         self.red_state = create_state(red_player)
 
+    def to_response(self):
+        return {'red_player_state': self.red_state, 'blue_player_state': self.blue_state}
+
 
 class ConnectionHandler:
     def __init__(self):
@@ -67,5 +70,13 @@ def start_game():
     if app.connection_handler.is_first_game_request():
         app.connection_handler.wait_for_second_player(request.remote_addr)
         return 'Waiting For Second Player'
+
+    if app.connection_handler.active_game['first_player'] == request.remote_addr:
+        return 'The same player entered twice'
+
+    if 'first_player' in app.connection_handler.active_game and \
+            'second_player' in app.connection_handler.active_game:
+        return 'The game already initialized'
+
     game = app.connection_handler.start_game(request.remote_addr)
-    return {'red_player_state': game.red_state, 'blue_player_state': game.blue_state}
+    return game.to_response()
