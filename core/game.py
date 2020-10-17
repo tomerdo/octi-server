@@ -12,7 +12,8 @@ class Game:
         self.red_state = create_state(red_player)
 
     def to_response(self):
-        return {'status': 'active', 'red_player_state': self.red_state, 'blue_player_state': self.blue_state}
+        return {'status': 'active', 'red_player_state': self.red_state, 'blue_player_state': self.blue_state, \
+                'round_num': self.round_num, 'action_num': self.action_num}
 
 
 def choose_red_and_blue_randomly(first_player, second_player):
@@ -31,4 +32,3 @@ def choose_red_and_blue_randomly(first_player, second_player):
 
 def create_state(player):
     return []
-
