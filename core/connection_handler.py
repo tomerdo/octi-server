@@ -40,3 +40,6 @@ class ConnectionHandler:
 
     def get_last_result(self):
         return self.last_result
+
+    def restart_game(self):
+        self.__init__()
