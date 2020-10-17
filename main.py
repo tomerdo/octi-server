@@ -15,9 +15,7 @@ def index():
 
 @app.route('/game_state')
 def get_game_state():
-    if not app.connection_handler.game_started():
-        return {'status': 'Not initialized'}
-    return app.connection_handler.game_repr()
+    return app.connection_handler.get_last_result()
 
 
 @app.route('/start_game', methods=['GET'])
@@ -28,13 +26,18 @@ def start_game():
     """
     if app.connection_handler.is_first_game_request():
         app.connection_handler.wait_for_second_player(request.remote_addr)
-        return {'status': 'Waiting For Second Player'}
+        result = {'status': 'Waiting For Second Player'}
 
-    if app.connection_handler.is_same_connection(request.remote_addr):
+    elif app.connection_handler.is_same_connection(request.remote_addr):
+        # we don't want to update this as a new state
         return {'status': 'The same player entered twice'}
 
-    if app.connection_handler.game_started():
-        return {'status': 'The game already initialized'}
+    elif app.connection_handler.game_started():
+        result = {'status': 'The game already initialized'}
 
-    game = app.connection_handler.start_game(request.remote_addr)
-    return game.to_response()
+    else:
+        game = app.connection_handler.start_game(request.remote_addr)
+        result = game.to_response()
+
+    app.connection_handler.update_last_result(result)
+    return result
