@@ -6,5 +6,5 @@ Install flask
 (pip install flask)
 
 ## Running the Server
-set FLASK_APP=hello.py
+set FLASK_APP=main.py
 flask run
